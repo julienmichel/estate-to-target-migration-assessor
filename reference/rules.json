@@ -1,0 +1,268 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "updated": "2026-10-02",
+    "note": "Tunable rule pack for the Estate-to-Target Migration Assessor. Edit thresholds here rather than in code. Every limit carries a 'source' hint so reviewers can verify against current Microsoft documentation."
+  },
+
+  "targets": {
+    "SQL_DB": {
+      "label": "Azure SQL Database",
+      "shape": "PaaS - single database / elastic pool",
+      "preference": 1
+    },
+    "SQL_MI": {
+      "label": "Azure SQL Managed Instance",
+      "shape": "PaaS - instance scoped",
+      "preference": 2
+    },
+    "SQL_VM": {
+      "label": "SQL Server on Azure VM",
+      "shape": "IaaS - full OS and instance control",
+      "preference": 3
+    },
+    "FABRIC": {
+      "label": "Microsoft Fabric (Warehouse / Lakehouse)",
+      "shape": "SaaS analytics - re-platform",
+      "preference": 4
+    }
+  },
+
+  "platform_limits": {
+    "SQL_DB": {
+      "max_db_size_gb": 4096,
+      "max_vcores": 128,
+      "note": "Hyperscale lifts the size ceiling; flagged as an upsell rather than a blocker."
+    },
+    "SQL_MI": {
+      "max_instance_storage_gb": 16384,
+      "max_vcores": 64,
+      "max_databases": 100,
+      "note": "General Purpose and Business Critical instance ceilings."
+    },
+    "SQL_VM": {
+      "max_db_size_gb": 262144,
+      "max_vcores": 256
+    }
+  },
+
+  "blockers": [
+    {
+      "id": "CROSS_DB",
+      "label": "Cross-database queries / three-part naming",
+      "detect": ["cross_db_query", "three_part_name", "cross database"],
+      "blocks": ["SQL_DB"],
+      "severity": "hard",
+      "remediation": "Consolidate dependent databases onto SQL MI, or refactor to elastic query / synonyms.",
+      "effort_days": 5
+    },
+    {
+      "id": "AGENT_JOBS",
+      "label": "SQL Server Agent jobs",
+      "detect": ["agent_job", "sql agent", "sqlagent"],
+      "blocks": ["SQL_DB"],
+      "severity": "hard",
+      "remediation": "SQL MI supports Agent natively. For SQL DB, re-host as Elastic Jobs or Azure Automation.",
+      "effort_days": 3
+    },
+    {
+      "id": "SERVICE_BROKER",
+      "label": "Service Broker",
+      "detect": ["service_broker", "service broker", "broker enabled"],
+      "blocks": ["SQL_DB"],
+      "severity": "hard",
+      "remediation": "SQL MI supports Service Broker within the instance. SQL DB requires re-architecting onto Azure Service Bus.",
+      "effort_days": 8
+    },
+    {
+      "id": "CLR",
+      "label": "CLR assemblies",
+      "detect": ["clr", "assembly", "clr_enabled"],
+      "blocks": ["SQL_DB"],
+      "severity": "hard",
+      "remediation": "SAFE assemblies are supported on SQL MI. UNSAFE/EXTERNAL_ACCESS assemblies require SQL on VM or code replacement.",
+      "effort_days": 6,
+      "escalate_if": {"unsafe": ["SQL_DB", "SQL_MI"]}
+    },
+    {
+      "id": "LINKED_SERVER",
+      "label": "Linked servers",
+      "detect": ["linked_server", "linked server", "openquery"],
+      "blocks": ["SQL_DB"],
+      "severity": "hard",
+      "remediation": "SQL MI supports linked servers to SQL targets only. Non-SQL providers (Oracle, ODBC, Excel) require SQL on VM.",
+      "effort_days": 4,
+      "creates_dependency_group": true
+    },
+    {
+      "id": "FILESTREAM",
+      "label": "FileStream / FileTable",
+      "detect": ["filestream", "filetable"],
+      "blocks": ["SQL_DB", "SQL_MI"],
+      "severity": "hard",
+      "remediation": "Not supported on any SQL PaaS tier. Move to SQL on VM, or re-architect onto Azure Blob Storage.",
+      "effort_days": 12
+    },
+    {
+      "id": "DB_MAIL_XP",
+      "label": "Database Mail / xp_cmdshell / OLE Automation",
+      "detect": ["xp_cmdshell", "ole automation", "sp_oacreate"],
+      "blocks": ["SQL_DB", "SQL_MI"],
+      "severity": "hard",
+      "remediation": "xp_cmdshell and OLE Automation are unavailable on PaaS. Database Mail is supported on SQL MI. Re-host OS-level calls as Azure Functions or Automation runbooks.",
+      "effort_days": 5
+    },
+    {
+      "id": "SSIS_SSRS_SSAS",
+      "label": "SSIS / SSRS / SSAS co-located on the instance",
+      "detect": ["ssis", "ssrs", "ssas", "integration services", "reporting services", "analysis services"],
+      "blocks": ["SQL_DB", "SQL_MI"],
+      "severity": "medium",
+      "remediation": "Separate the BI tier: SSIS to Azure Data Factory SSIS-IR, SSRS to Power BI Paginated Reports, SSAS to Power BI Premium or Fabric. The database engine itself can still land on PaaS.",
+      "effort_days": 10,
+      "detaches_rather_than_blocks": true
+    },
+    {
+      "id": "REPLICATION_PUB",
+      "label": "Transactional replication publisher",
+      "detect": ["replication", "publisher", "distributor"],
+      "blocks": ["SQL_DB"],
+      "severity": "medium",
+      "remediation": "SQL MI can act as publisher, distributor and subscriber. SQL DB can only subscribe.",
+      "effort_days": 6
+    },
+    {
+      "id": "UNSUPPORTED_COLLATION",
+      "label": "Non-default or unsupported instance collation",
+      "detect": ["collation_unsupported", "sql_collation_legacy"],
+      "blocks": [],
+      "severity": "medium",
+      "remediation": "SQL MI instance collation is fixed at creation and cannot be changed afterwards. Confirm the collation up front; SQL DB supports database-level collation only.",
+      "effort_days": 2
+    },
+    {
+      "id": "DEPRECATED_FEATURE",
+      "label": "Deprecated or discontinued feature in use",
+      "detect": ["deprecated", "discontinued", "compat_level_legacy"],
+      "blocks": [],
+      "severity": "medium",
+      "remediation": "Raise the database compatibility level and remove discontinued syntax before migration. Test with Query Store and the Database Experimentation Assistant.",
+      "effort_days": 4
+    },
+    {
+      "id": "TRACE_FLAGS",
+      "label": "Instance-level trace flags",
+      "detect": ["trace_flag", "traceflag", "-T1117", "-T1118"],
+      "blocks": ["SQL_DB"],
+      "severity": "low",
+      "remediation": "Only a small subset of global trace flags is honoured on SQL MI. Validate each flag; most legacy tempdb flags are redundant on modern engines.",
+      "effort_days": 1
+    },
+    {
+      "id": "FULLTEXT_SEMANTIC",
+      "label": "Semantic search / full-text with custom components",
+      "detect": ["semantic search", "custom wordbreaker", "custom_filter"],
+      "blocks": ["SQL_DB", "SQL_MI"],
+      "severity": "low",
+      "remediation": "Standard full-text search is supported on PaaS. Semantic search and custom word breakers are not.",
+      "effort_days": 3
+    },
+    {
+      "id": "WINDOWS_AUTH",
+      "label": "Windows authentication dependency",
+      "detect": ["windows_auth", "integrated security", "ntlm"],
+      "blocks": [],
+      "severity": "low",
+      "remediation": "Map to Microsoft Entra authentication. SQL MI supports Entra-only and Kerberos via Entra Domain Services.",
+      "effort_days": 3
+    },
+    {
+      "id": "END_OF_SUPPORT",
+      "label": "SQL Server version out of support",
+      "detect": ["eos", "end of support", "unsupported_version"],
+      "blocks": [],
+      "severity": "medium",
+      "remediation": "Out-of-support versions carry ESU cost and security exposure. PaaS targets remove the patching obligation entirely; this strengthens the migration business case.",
+      "effort_days": 0,
+      "is_opportunity_signal": true
+    }
+  ],
+
+  "version_support": {
+    "2008": {"eos": "2019-07-09", "supported": false, "min_target": "SQL_MI"},
+    "2008R2": {"eos": "2019-07-09", "supported": false, "min_target": "SQL_MI"},
+    "2012": {"eos": "2022-07-12", "supported": false, "min_target": "SQL_MI"},
+    "2014": {"eos": "2024-07-09", "supported": false, "min_target": "SQL_MI"},
+    "2016": {"eos": "2026-07-14", "supported": false, "min_target": "SQL_MI"},
+    "2017": {"eos": "2027-10-12", "supported": true, "min_target": "SQL_DB"},
+    "2019": {"eos": "2030-01-08", "supported": true, "min_target": "SQL_DB"},
+    "2022": {"eos": "2033-01-11", "supported": true, "min_target": "SQL_DB"},
+    "2025": {"eos": "2036-01-01", "supported": true, "min_target": "SQL_DB"}
+  },
+
+  "sizing": {
+    "vcore_ladder": [2, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64, 80, 128],
+    "mi_vcore_ladder": [4, 8, 16, 24, 32, 40, 64],
+    "vm_vcore_ladder": [2, 4, 8, 16, 20, 32, 48, 64, 96, 128],
+    "headroom_factor": 1.25,
+    "default_cpu_util_pct": 50.0,
+    "default_peak_to_avg_ratio": 1.6,
+    "storage_growth_factor": 1.3,
+    "storage_ladder_gb": [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384],
+    "memory_per_vcore_gb": 5.1,
+    "business_critical_triggers": {
+      "min_iops": 5000,
+      "min_throughput_mbps": 250,
+      "requires_ha": true,
+      "note": "Business Critical uses local NVMe and provides a free readable replica. General Purpose is remote storage and cheaper."
+    },
+    "iops_per_vcore": {
+      "general_purpose": 500,
+      "business_critical": 8000
+    }
+  },
+
+  "non_production": {
+    "edition_values": ["developer", "express", "evaluation"],
+    "workload_type_values": ["dev", "development", "test", "testing", "uat", "qa", "sandbox", "staging", "training", "poc"],
+    "name_patterns": ["dev", "test", "uat", "qa", "sandbox", "sbx", "demo", "training", "poc", "tmp"],
+    "note": "Non-production workloads are migrated first as a low-risk proving ground, and are never sized for Business Critical. Detecting them separately stops dev databases inflating the complex waves and the run-rate."
+  },
+
+  "fabric_heuristics": {
+    "name_patterns": ["dw", "datawarehouse", "data_warehouse", "edw", "olap", "cube", "reporting", "report", "analytics", "mart", "datamart"],
+    "workload_type_values": ["reporting", "analytics", "warehouse", "dw", "bi", "olap"],
+    "min_size_gb_for_fabric": 200,
+    "max_write_ratio": 0.2,
+    "note": "Fabric is proposed as a re-platform CANDIDATE only. It is never auto-assigned over an OLTP workload; it requires human confirmation because it changes the application contract."
+  },
+
+  "effort_bands": {
+    "S": {"label": "Simple", "days_low": 2, "days_high": 4, "criteria": "No hard blockers, under 200 GB, supported version"},
+    "M": {"label": "Moderate", "days_low": 5, "days_high": 10, "criteria": "At most two medium findings, under 1 TB"},
+    "L": {"label": "Complex", "days_low": 11, "days_high": 20, "criteria": "Hard blocker requiring remediation, or over 1 TB"},
+    "XL": {"label": "Re-architect", "days_low": 21, "days_high": 40, "criteria": "Multiple hard blockers, over 5 TB, or a Fabric re-platform"}
+  },
+
+  "waves": [
+    {"id": 1, "name": "Wave 1 - Quick wins", "accepts_effort": ["S"], "max_blockers": 0, "intent": "Prove the migration factory and bank early credit. Land these first."},
+    {"id": 2, "name": "Wave 2 - Standard", "accepts_effort": ["M"], "max_blockers": 2, "intent": "Bulk of the estate. Repeatable runbook, minimal remediation."},
+    {"id": 3, "name": "Wave 3 - Complex", "accepts_effort": ["L"], "max_blockers": 99, "intent": "Remediation required before cutover. Needs application-team engagement."},
+    {"id": 4, "name": "Wave 4 - Re-architect", "accepts_effort": ["XL"], "max_blockers": 99, "intent": "Design-led. Treat as a project in its own right, not a migration task."}
+  ],
+
+  "pricing": {
+    "api": "https://prices.azure.com/api/retail/prices",
+    "default_region": "uaenorth",
+    "currency": "USD",
+    "hours_per_month": 730,
+    "service_names": {
+      "SQL_DB": "SQL Database",
+      "SQL_MI": "SQL Managed Instance",
+      "SQL_VM": "Virtual Machines",
+      "FABRIC": "Microsoft Fabric"
+    },
+    "ahb_discount_hint": 0.55,
+    "note": "Azure Hybrid Benefit can remove the SQL licence component for customers with Software Assurance. The discount hint is indicative only and must be validated per agreement."
+  }
+}

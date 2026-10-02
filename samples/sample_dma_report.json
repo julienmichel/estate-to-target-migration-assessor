@@ -1,0 +1,133 @@
+{
+  "AssessmentName": "Contoso SQL Readiness",
+  "AssessmentTarget": "Azure SQL Database",
+  "Servers": [
+    {
+      "ServerName": "SQLLEG01",
+      "SqlServerVersion": "10.50.6000",
+      "Edition": "Enterprise Edition",
+      "Databases": [
+        {
+          "Name": "LegacyFinance",
+          "CompatibilityLevel": "100",
+          "Collation": "Latin1_General_BIN",
+          "SizeMB": 624640,
+          "CompatibilityIssues": [
+            {
+              "Title": "Deprecated syntax SETUSER is discontinued",
+              "Severity": "Breaking change",
+              "ChangeCategory": "BreakingChange",
+              "ImpactedObjects": [
+                {
+                  "Name": "usp_LegacyImpersonate"
+                },
+                {
+                  "Name": "usp_BatchPost"
+                }
+              ]
+            },
+            {
+              "Title": "Linked servers are not supported on the target platform",
+              "Severity": "Blocking",
+              "ChangeCategory": "MigrationBlocker",
+              "ImpactedObjects": [
+                {
+                  "Name": "ORACLE_FIN"
+                },
+                {
+                  "Name": "LEGACY_AS400"
+                }
+              ]
+            },
+            {
+              "Title": "SQL Server Agent jobs will not migrate",
+              "Severity": "Blocking",
+              "ChangeCategory": "MigrationBlocker",
+              "ImpactedObjects": [
+                {
+                  "Name": "nightly_close"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Name": "DocumentStore",
+          "CompatibilityLevel": "100",
+          "Collation": "Latin1_General_BIN",
+          "SizeMB": 3174400,
+          "CompatibilityIssues": [
+            {
+              "Title": "FILESTREAM is not supported on Azure SQL Database or Managed Instance",
+              "Severity": "Blocking",
+              "ChangeCategory": "MigrationBlocker",
+              "ImpactedObjects": [
+                {
+                  "Name": "DocumentBlobs"
+                }
+              ]
+            },
+            {
+              "Title": "FileTable is not supported",
+              "Severity": "Blocking",
+              "ChangeCategory": "MigrationBlocker",
+              "ImpactedObjects": [
+                {
+                  "Name": "ScannedDocs"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "ServerName": "SQLINT01",
+      "SqlServerVersion": "14.0.3456",
+      "Edition": "Enterprise Edition",
+      "Databases": [
+        {
+          "Name": "IntegrationHub",
+          "CompatibilityLevel": "140",
+          "Collation": "SQL_Latin1_General_CP1_CI_AS",
+          "SizeMB": 266240,
+          "CompatibilityIssues": [
+            {
+              "Title": "xp_cmdshell is not available on Azure SQL Database or Managed Instance",
+              "Severity": "Blocking",
+              "ChangeCategory": "MigrationBlocker",
+              "ImpactedObjects": [
+                {
+                  "Name": "usp_RunExtract"
+                }
+              ]
+            },
+            {
+              "Title": "Linked servers reference non-SQL providers",
+              "Severity": "Warning",
+              "ChangeCategory": "MigrationBlocker",
+              "ImpactedObjects": [
+                {
+                  "Name": "SAP_PROD"
+                },
+                {
+                  "Name": "ODBC_WMS"
+                }
+              ]
+            },
+            {
+              "Title": "Database Mail profile configured",
+              "Severity": "Information",
+              "ChangeCategory": "Informational",
+              "ImpactedObjects": [
+                {
+                  "Name": "AlertProfile"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

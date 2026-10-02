@@ -1,0 +1,16 @@
+Server Name,Database Name,SQL Server Version,Edition,Number of Cores,CPU Utilization Percentage,Memory (GB),Database Size (GB),Log Size (GB),Max IOPS,Throughput (MBps),Collation,Number of Agent Jobs,Linked Servers,Workload Type,Migration Issue
+SQLPRD01,ERP_Core,2014,Enterprise,24,68,256,1850,320,11200,420,SQL_Latin1_General_CP1_CI_AS,42,3,OLTP,Service Broker enabled; CLR assemblies present (UNSAFE)
+SQLPRD01,ERP_Archive,2014,Enterprise,24,12,256,6200,180,1400,90,SQL_Latin1_General_CP1_CI_AS,4,0,Archive,
+SQLPRD02,CRM_Live,2016,Enterprise,16,55,128,940,160,7800,310,SQL_Latin1_General_CP1_CI_AS,18,1,OLTP,SQL Agent jobs; cross-database queries to ERP_Core
+SQLPRD03,Billing,2019,Standard,8,41,64,420,70,3100,140,SQL_Latin1_General_CP1_CI_AS,6,0,OLTP,Cross database query detected
+SQLPRD03,BillingStaging,2019,Standard,8,18,64,95,20,800,40,SQL_Latin1_General_CP1_CI_AS,2,0,Staging,
+SQLPRD04,HR_Portal,2019,Standard,4,22,32,38,8,450,25,SQL_Latin1_General_CP1_CI_AS,0,0,OLTP,
+SQLPRD04,Timesheets,2019,Standard,4,15,32,12,3,210,12,SQL_Latin1_General_CP1_CI_AS,0,0,OLTP,
+SQLDWH01,EnterpriseDW,2016,Enterprise,32,72,512,14500,900,18000,780,SQL_Latin1_General_CP1_CI_AS,31,4,Reporting,SSIS packages hosted on instance; SSAS cube co-located; linked server to Oracle
+SQLDWH01,SalesMart,2016,Enterprise,32,35,512,2400,260,5200,240,SQL_Latin1_General_CP1_CI_AS,12,2,Analytics,Cross database queries; SSRS reporting services
+SQLLEG01,LegacyFinance,2008R2,Enterprise,8,30,48,610,120,2200,110,Latin1_General_BIN,9,2,OLTP,FileStream enabled; deprecated feature: SETUSER
+SQLLEG01,DocumentStore,2008R2,Enterprise,8,25,48,3100,140,2900,180,Latin1_General_BIN,3,0,Content,FileStream enabled; FileTable in use
+SQLAPP05,WebCatalogue,2022,Standard,8,34,64,180,30,1900,95,SQL_Latin1_General_CP1_CI_AS,0,0,OLTP,
+SQLAPP05,SessionState,2022,Standard,8,61,64,22,40,6400,260,SQL_Latin1_General_CP1_CI_AS,0,0,OLTP,
+SQLDEV01,DevSandbox,2019,Developer,4,8,16,45,10,300,18,SQL_Latin1_General_CP1_CI_AS,1,0,Dev,
+SQLINT01,IntegrationHub,2017,Enterprise,12,48,96,260,55,4100,190,SQL_Latin1_General_CP1_CI_AS,27,5,Integration,xp_cmdshell enabled; linked servers to 5 external systems; Database Mail configured

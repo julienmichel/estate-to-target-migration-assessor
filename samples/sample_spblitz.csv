@@ -1,0 +1,11 @@
+ServerName,DatabaseName,Priority,FindingsGroup,Finding,Details
+SQLPRD01,ERP_Core,10,Reliability,CLR is Enabled,CLR assemblies are present and at least one is marked UNSAFE.
+SQLPRD01,ERP_Core,50,Performance,Service Broker Enabled,Service Broker queues are active on this database.
+SQLPRD01,ERP_Core,100,Informational,Agent Jobs Owned By User,42 SQL Server Agent jobs reference this database.
+SQLPRD02,CRM_Live,50,Reliability,Cross Database Ownership Chaining,Cross database queries detected referencing ERP_Core.
+SQLPRD02,CRM_Live,110,Performance,Deprecated Feature In Use,Deprecated feature usage recorded in the last 7 days.
+SQLDWH01,EnterpriseDW,50,Reliability,Linked Server Configured,Linked server ORACLE_FIN uses a non-SQL provider.
+SQLDWH01,EnterpriseDW,100,Informational,SSAS Installed On Server,Analysis Services is co-located with the database engine.
+SQLDWH01,EnterpriseDW,100,Informational,SSIS Installed On Server,Integration Services catalogue present on this instance.
+SQLDWH01,SalesMart,50,Reliability,Cross Database Query,Three-part naming references EnterpriseDW.
+SQLAPP05,SessionState,200,Informational,No Issues Found,No notable findings for this database.

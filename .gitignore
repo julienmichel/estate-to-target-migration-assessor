@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Runtime cache for Azure retail price lookups
+.cache/
+
+# Assessment output - may contain customer data, never commit
+assessment-output/
+*_assessment.xlsx
+*_assessment.html
+*_assessment.json
+*_boq.csv
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
